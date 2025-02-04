@@ -1,6 +1,10 @@
+.git/
 files/
-output/
 .env
+.env.example
+.gitignore
+compose.yml
+Dockerfile
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,go,goland+all
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,go,goland+all
