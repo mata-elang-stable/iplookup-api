@@ -33,12 +33,10 @@ func GetConfig() *Config {
 func (c *Config) SetupLogging() {
 	switch instance.VerboseCount {
 	case 0:
-		log.SetLevel(logger.WarnLevel)
-	case 1:
 		log.SetLevel(logger.InfoLevel)
-	case 2:
+	case 1:
 		log.SetLevel(logger.DebugLevel)
-	case 3:
+	case 2:
 		log.SetLevel(logger.TraceLevel)
 	default:
 		log.SetLevel(logger.TraceLevel)

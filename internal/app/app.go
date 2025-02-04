@@ -51,7 +51,7 @@ func sendResponse(w http.ResponseWriter, r *http.Request, code int, data []byte)
 		"method": r.Method,
 		"path":   r.URL.RawPath,
 		"code":   code,
-	}).Infoln()
+	}).Debugln()
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
@@ -83,11 +83,10 @@ func (a *App) handleHealthCheckRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) handleLookupRequest(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	ip := vars["ip"]
+	ipStr := r.URL.Query().Get("ip")
 
 	// Validate the IP address
-	parsedIP := net.ParseIP(ip)
+	parsedIP := net.ParseIP(ipStr)
 
 	if parsedIP == nil {
 		sendErrorResponse(w, r, http.StatusBadRequest, "invalid IP address")
@@ -101,8 +100,8 @@ func (a *App) handleLookupRequest(w http.ResponseWriter, r *http.Request) {
 
 	if a.cacheInstance != nil {
 		// Check if the request already cached
-		if val, err := a.cacheInstance.Get(r.Context(), ip); err == nil {
-			log.Debugf("Serving request from cache: %s", ip)
+		if val, err := a.cacheInstance.Get(r.Context(), ipStr); err == nil {
+			log.Debugf("Serving request from cache: %s", ipStr)
 
 			sendSuccessResponse(w, r, []byte(val))
 			return
@@ -134,8 +133,8 @@ func (a *App) handleLookupRequest(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if a.cacheInstance != nil {
-		log.Debugf("Caching request: %s", ip)
-		if err := a.cacheInstance.Cache(r.Context(), ip, string(responseDataByte)); err != nil {
+		log.Debugf("Caching request: %s", ipStr)
+		if err := a.cacheInstance.Cache(r.Context(), ipStr, string(responseDataByte)); err != nil {
 			log.Errorf("Error while caching request: %v", err)
 		}
 	}
