@@ -7,7 +7,14 @@ import (
 )
 
 type Config struct {
-	MAXMINDDB_REGION_FILE
+	ListenAddress      string `mapstructure:"listen_address"`
+	ListenPort         int    `mapstructure:"listen_port"`
+	MMDBRegionFilePath string `mapstructure:"mmdb_region_file_path"`
+	MMDBASNFilePath    string `mapstructure:"mmdb_asn_file_path"`
+	EnableCache        bool   `mapstructure:"enable_cache"`
+	RedisURL           string `mapstructure:"redis_url"`
+	CacheTTLSec        int    `mapstructure:"cache_ttl_sec"`
+	VerboseCount       int    `mapstructure:"verbose"`
 }
 
 var log = logger.GetLogger()
@@ -26,9 +33,13 @@ func GetConfig() *Config {
 func (c *Config) SetupLogging() {
 	switch instance.VerboseCount {
 	case 0:
-		log.SetLevel(logger.InfoLevel)
+		log.SetLevel(logger.WarnLevel)
 	case 1:
+		log.SetLevel(logger.InfoLevel)
+	case 2:
 		log.SetLevel(logger.DebugLevel)
+	case 3:
+		log.SetLevel(logger.TraceLevel)
 	default:
 		log.SetLevel(logger.TraceLevel)
 	}

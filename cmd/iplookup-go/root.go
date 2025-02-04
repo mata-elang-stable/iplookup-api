@@ -1,11 +1,13 @@
-package iplookup_go
+package main
 
 import (
 	"fmt"
 	"github.com/fadhilyori/iplookup-go/internal/config"
 	"github.com/fadhilyori/iplookup-go/internal/logger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"os"
+	"runtime"
 )
 
 var (
@@ -17,15 +19,16 @@ var (
 var log = logger.GetLogger()
 
 var rootCmd = &cobra.Command{
-	Use:   "mea-report",
-	Short: "Mata Elang Addon Report Command Service",
-	Long: `Mata Elang Addon Report Command Service is a service that listens to incoming messages from Kafka,
-processes them, and sends the result to another Kafka topic.`,
-	Run:  runApp,
-	Args: cobra.NoArgs,
+	Use:   "iplookup-go",
+	Short: "IP Lookup Service",
+	Long:  `IP Lookup Service is a simple service that provides information about an IP address from MaxMind GeoLite2 database.`,
+	Run:   runApp,
+	Args:  cobra.NoArgs,
 }
 
 func init() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	
 	// Read configuration from .env file in the current directory
 	// viper.SetConfigFile("./.env")
 	viper.SetConfigName(".env")
@@ -34,21 +37,21 @@ func init() {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.WithField("error", err).Warnln("Failed to read configuration file")
+		log.WithField("error", err).Warnln("Failed to read configuration file, skipping.")
 	}
 
 	viper.AutomaticEnv()
 
 	conf := config.GetConfig()
 
-	viper.SetDefault("kafka_brokers", "localhost:9092")
-	viper.SetDefault("kafka_topic_input", "sensor_events")
-	viper.SetDefault("schema_registry_url", "http://localhost:8081")
-	viper.SetDefault("report_api_url", "http://localhost:8000")
-	viper.SetDefault("report_post_event_path", "/events")
-	viper.SetDefault("http_timeout_seconds", 5)
-	viper.SetDefault("http_max_retries", 3)
-	viper.SetDefault("max_concurrent", 100)
+	viper.SetDefault("listen_address", "0.0.0.0")
+	viper.SetDefault("listen_port", "3000")
+	viper.SetDefault("mmdb_region_file_path", "")
+	viper.SetDefault("mmdb_asn_file_path", "")
+	viper.SetDefault("enable_cache", false)
+	viper.SetDefault("redis_url", "")
+	viper.SetDefault("cache_ttl_sec", 3600)
+	viper.SetDefault("verbose", 0)
 
 	if err := viper.Unmarshal(&conf); err != nil {
 		log.Fatalf("Failed to unmarshal configuration: %v", err)
@@ -56,10 +59,8 @@ func init() {
 
 	flags := rootCmd.PersistentFlags()
 
-	flags.StringVar(&conf.KafkaBrokers, "kafka-brokers", conf.KafkaBrokers, "")
-	flags.StringVar(&conf.InputKafkaTopic, "input-topic", conf.InputKafkaTopic, "")
-	flags.StringVar(&conf.SchemaRegistryUrl, "schema-registry-url", conf.SchemaRegistryUrl, "")
-	flags.StringVar(&conf.ReportApiUrl, "url", conf.ReportApiUrl, "Mata Elang ReportApi Base URL")
+	flags.StringVar(&conf.ListenAddress, "host", conf.ListenAddress, "Host to listen on")
+	flags.IntVar(&conf.ListenPort, "port", conf.ListenPort, "Port to listen on")
 	flags.CountVarP(&conf.VerboseCount, "verbose", "v", "Increase verbosity of the output.")
 
 	if err := viper.BindPFlags(flags); err != nil {
